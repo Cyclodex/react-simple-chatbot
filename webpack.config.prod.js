@@ -6,7 +6,7 @@ module.exports = {
   entry: path.resolve(__dirname, 'lib/index'),
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'react-simple-chatbot.js',
+    filename: 'cyclodex-chatbot.js',
     publicPath: 'dist/',
     library: 'ReactSimpleChatbot',
     libraryTarget: 'umd',

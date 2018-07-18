@@ -1,7 +1,7 @@
 {
-  "name": "bekb-react-simple-chatbot",
+  "name": "cyclodex-react-simple-chatbot",
   "version": "0.0.1",
-  "description": "Simple Chatbot for BEKB",
+  "description": "React Simple Chatbot extended by Cyclodex",
   "private": true,
   "scripts": {
     "lint": "./node_modules/.bin/eslint lib/*.jsx",
