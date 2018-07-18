@@ -1,8 +1,8 @@
 {
-  "name": "react-simple-chatbot",
-  "version": "0.3.3",
-  "description": "React Simple Chatbot",
-  "main": "dist/react-simple-chatbot.js",
+  "name": "bekb-react-simple-chatbot",
+  "version": "0.0.1",
+  "description": "Simple Chatbot for BEKB",
+  "private": true,
   "scripts": {
     "lint": "./node_modules/.bin/eslint lib/*.jsx",
     "prepublish": "npm run build",
@@ -34,7 +34,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/LucasBassetti/react-simple-chatbot"
+    "url": "https://github.com/Cyclodex/react-simple-chatbot"
   },
   "keywords": [
     "react",
@@ -44,9 +44,9 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/LucasBassetti/react-simple-chatbot/issues"
+    "url": "https://github.com/Cyclodex/react-simple-chatbot/issues"
   },
-  "homepage": "https://github.com/LucasBassetti/react-simple-chatbot#readme",
+  "homepage": "https://github.com/Cyclodex/react-simple-chatbot#readme",
   "devDependencies": {
     "babel-core": "^6.25.0",
     "babel-eslint": "^7.2.3",
