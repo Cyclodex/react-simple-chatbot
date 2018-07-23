@@ -257,7 +257,6 @@ class ChatBot extends Component {
         nextStep = Object.assign({}, steps[updateStep.update]);
 
         // Also take over metadata:
-        console.warn(updateStep);
         const mergedMetadata = Object.assign(nextStep.metadata, updateStep.metadata);
         nextStep.trigger = updateStep.trigger;
 

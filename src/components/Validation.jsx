@@ -2,8 +2,11 @@ import React, { Component } from 'react';
 
 export class Validation extends Component {
   componentWillMount() {
+
+    console.log(this.props);
+    
     const { previousStep } = this.props;
-    const { metadata = {} } = previousStep;
+    const { metadata } = previousStep;
     const trigger = previousStep.value === 'help' ? 'help-message' : metadata.triggerNext;
 
     this.props.triggerNextStep({value: metadata.triggerNext, trigger });
