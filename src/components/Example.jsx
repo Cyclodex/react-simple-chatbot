@@ -19,7 +19,7 @@ const otherFontTheme = {
 const steps = [
   {
     id: 'vornameFrage',
-    message: 'test',
+    message: 'Vorname',
     trigger: 'vorname',
   },
   {
@@ -27,23 +27,41 @@ const steps = [
     user: true,
     trigger: 'validate',
     metadata: {
-      triggerNext: 'mobilenummerFrage',
+      triggerNext: 'ausbildungNachnameFrage',
       errorMessage: 'Vorname failed, try again',
     },
   },
   {
-    id: 'validate',
-    replace: true,
-    component: <Validation />,
-    delay: 8,
-    waitAction: true,
+    id: 'ausbildungNachnameFrage',
+    message: 'ausbildung nachname',
+    trigger: 'ausbildungNachname',
+  },
+  {
+    id: 'ausbildungNachname',
+    update: 'nachname',
+    trigger: 'validate',
     metadata: {
-      errorMessage: 'Val failed',
+      id: 'ausbildungNachname',
+      triggerNext: 'mobilenummerFrage',
+      errorMessage: 'Ausbildung Mobile nummer falsch.',
+    },
+  },
+  {
+    id: 'nachnameFrage',
+    message: 'Nachname:',
+    trigger: 'nachname',
+  },
+  {
+    id: 'nachname',
+    user: true,
+    trigger: 'validate',
+    metadata: {
+      triggerNext: 'end',
     },
   },
   {
     id: 'mobilenummerFrage',
-    message: 'Hello question 2 with update',
+    message: 'OK: Mobile nummer Update:',
     trigger: 'mobilenummerUpdate',
   },
   {
@@ -53,7 +71,7 @@ const steps = [
     metadata: {
       id: 'mobilenummerUpdate',
       someMetadata: 'Am I getting copied over?',
-      errorMessage: 'GUGUS update message',
+      errorMessage: 'GUGUS update mobile nummer error',
       triggerNext: 'special',
     },
   },
@@ -64,6 +82,16 @@ const steps = [
     metadata: {
       errorMessage: 'mobilenummer original',
       triggerNext: 'vornameFrage',
+    },
+  },
+  {
+    id: 'validate',
+    replace: true,
+    component: <Validation />,
+    delay: 8,
+    waitAction: true,
+    metadata: {
+      errorMessage: 'Val failed',
     },
   },
   {
