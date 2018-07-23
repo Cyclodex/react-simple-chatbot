@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 export class Validation extends Component {
   componentWillMount() {
     const { previousStep } = this.props;
-    const { metadata, id } = previousStep;
+    const { metadata } = previousStep;
     
     // We test here simply for input == "fail" to fail the question. You would call some validation here.
     const trigger = previousStep.value === 'fail' ? 'help-message' : metadata.triggerNext;
