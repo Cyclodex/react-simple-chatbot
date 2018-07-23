@@ -256,17 +256,17 @@ class ChatBot extends Component {
         const updateStep = nextStep;
         nextStep = Object.assign({}, steps[updateStep.update]);
 
-        // Also take over metadata:
-        const mergedMetadata = Object.assign(nextStep.metadata, updateStep.metadata);
-        nextStep.trigger = updateStep.trigger;
-
         if (nextStep.options) {
           for (let i = 0, len = nextStep.options.length; i < len; i += 1) {
             nextStep.options[i].trigger = updateStep.trigger;
           }
         } else {
-          nextStep.metadata = mergedMetadata;
+          nextStep.trigger = updateStep.trigger;
         }
+
+        // Also take over metadata
+        const mergedMetadata = Object.assign({}, nextStep.metadata, updateStep.metadata);
+        nextStep.metadata = mergedMetadata;
       }
 
       nextStep.key = Random(24);

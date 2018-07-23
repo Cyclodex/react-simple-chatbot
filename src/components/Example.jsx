@@ -28,6 +28,7 @@ const steps = [
     trigger: 'validate',
     metadata: {
       triggerNext: 'mobilenummerFrage',
+      errorMessage: 'Vorname failed, try again',
     },
   },
   {
@@ -37,7 +38,7 @@ const steps = [
     delay: 8,
     waitAction: true,
     metadata: {
-      message: '',
+      errorMessage: 'Val failed',
     },
   },
   {
@@ -50,9 +51,10 @@ const steps = [
     update: 'mobilenummer',
     trigger: 'validate',
     metadata: {
+      id: 'mobilenummerUpdate',
       someMetadata: 'Am I getting copied over?',
-      message: 'gugus',
-      triggerNext: 'end',
+      errorMessage: 'GUGUS update message',
+      triggerNext: 'special',
     },
   },
   {
@@ -60,9 +62,9 @@ const steps = [
     user: true,
     trigger: 'validate',
     metadata: {
-      someMetadata: 'Am I getting copied over?',
-      message: 'ugugugus',
-      triggerNext: 'end',
+      original: true,
+      message: 'mobilenummer original',
+      triggerNext: 'vornameFrage',
     },
   },
   {
@@ -74,6 +76,11 @@ const steps = [
   {
     id: 'end',
     message: 'Finish',
+    end: true,
+  },
+  {
+    id: 'special',
+    message: 'Spacial case reached',
     end: true,
   },
 ];

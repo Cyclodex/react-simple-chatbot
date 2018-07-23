@@ -2,16 +2,13 @@ import React, { Component } from 'react';
 
 export class Validation extends Component {
   componentWillMount() {
-
-    console.log(this.props);
-    
     const { previousStep } = this.props;
-    const { metadata } = previousStep;
-    const trigger = previousStep.value === 'help' ? 'help-message' : metadata.triggerNext;
+    const { metadata, id } = previousStep;
+    
+    // We test here simply for input == "fail" to fail the question. You would call some validation here.
+    const trigger = previousStep.value === 'fail' ? 'help-message' : metadata.triggerNext;
 
     this.props.triggerNextStep({value: metadata.triggerNext, trigger });
-    // previousStep.metadata = {};
-    previousStep.metadata.errorMessage = 'The specific error message...';
   }
 
   render() {
@@ -22,7 +19,10 @@ export class Validation extends Component {
 export class HelpMessage extends Component {
   componentDidMount() {
     const { previousStep } = this.props;
-    this.props.triggerNextStep({ trigger: previousStep.id });
+    // In case of an update case, this would fail otherwise (not knowing the real prev state)
+    // Reproducable when failing again after a failing update step.
+    const realPreviousStepId = previousStep.metadata.id || previousStep.id;
+    this.props.triggerNextStep({ trigger: realPreviousStepId });
   }
 
   render() {
