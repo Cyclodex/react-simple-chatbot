@@ -27,7 +27,7 @@ const steps = [
     user: true,
     trigger: 'validate',
     metadata: {
-      triggerNext: 'end',
+      triggerNext: 'mobilenummerFrage',
     },
   },
   {
@@ -41,9 +41,29 @@ const steps = [
     },
   },
   {
-    id: 'ausbildungFrage',
-    message: 'Hello',
-    trigger: 'end',
+    id: 'mobilenummerFrage',
+    message: 'Hello question 2 with update',
+    trigger: 'mobilenummerUpdate',
+  },
+  {
+    id: 'mobilenummerUpdate',
+    update: 'mobilenummer',
+    trigger: 'validate',
+    metadata: {
+      someMetadata: 'Am I getting copied over?',
+      message: 'gugus',
+      triggerNext: 'end',
+    },
+  },
+  {
+    id: 'mobilenummer',
+    user: true,
+    trigger: 'validate',
+    metadata: {
+      someMetadata: 'Am I getting copied over?',
+      message: 'ugugugus',
+      triggerNext: 'end',
+    },
   },
   {
     id: 'help-message',
