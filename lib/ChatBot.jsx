@@ -263,6 +263,10 @@ class ChatBot extends Component {
         } else {
           nextStep.trigger = updateStep.trigger;
         }
+
+        // Also take over metadata
+        const mergedMetadata = Object.assign({}, nextStep.metadata, updateStep.metadata);
+        nextStep.metadata = mergedMetadata;
       }
 
       nextStep.key = Random(24);
