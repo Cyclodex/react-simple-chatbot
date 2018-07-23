@@ -2,6 +2,8 @@ import React from 'react';
 import { ThemeProvider } from 'styled-components';
 import ChatBot from '../../lib/index';
 
+import { Validation, HelpMessage } from './Validation';
+
 const otherFontTheme = {
   background: '#f5f8fb',
   fontFamily: 'Helvetica Neue',
@@ -16,8 +18,42 @@ const otherFontTheme = {
 
 const steps = [
   {
-    id: '1',
-    message: 'Hello World',
+    id: 'vornameFrage',
+    message: 'test',
+    trigger: 'vorname',
+  },
+  {
+    id: 'vorname',
+    user: true,
+    trigger: 'validate',
+    metadata: {
+      triggerNext: 'end',
+    },
+  },
+  {
+    id: 'validate',
+    replace: true,
+    component: <Validation />,
+    delay: 8,
+    waitAction: true,
+    metadata: {
+      message: '',
+    },
+  },
+  {
+    id: 'ausbildungFrage',
+    message: 'Hello',
+    trigger: 'end',
+  },
+  {
+    id: 'help-message',
+    component: <HelpMessage />,
+    asMessage: true,
+    waitAction: true,
+  },
+  {
+    id: 'end',
+    message: 'Finish',
     end: true,
   },
 ];
