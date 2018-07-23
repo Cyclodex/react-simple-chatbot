@@ -62,8 +62,7 @@ const steps = [
     user: true,
     trigger: 'validate',
     metadata: {
-      original: true,
-      message: 'mobilenummer original',
+      errorMessage: 'mobilenummer original',
       triggerNext: 'vornameFrage',
     },
   },
