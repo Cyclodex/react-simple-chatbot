@@ -7,9 +7,9 @@ module.exports = {
   externals: { 'styled-components': 'styled-components' },
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'cyclodex-chatbot.js',
+    filename: 'bekb-chatbot.js',
     publicPath: 'dist/',
-    library: 'CyclodexReactSimpleChatbot',
+    library: 'BekbReactSimpleChatbot',
     libraryTarget: 'umd',
   },
   resolve: {

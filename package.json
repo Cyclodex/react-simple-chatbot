@@ -1,9 +1,9 @@
 {
-  "name": "cyclodex-react-simple-chatbot",
-  "version": "0.1.0",
-  "description": "React Simple Chatbot extended by Cyclodex",
+  "name": "bekb-react-simple-chatbot",
+  "version": "0.1.1",
+  "description": "React Simple Chatbot extended for BEKB",
   "private": true,
-  "main": "dist/cyclodex-chatbot.js",
+  "main": "dist/bekb-chatbot.js",
   "scripts": {
     "lint": "./node_modules/.bin/eslint lib/*.jsx",
     "prepublish": "npm run build",
