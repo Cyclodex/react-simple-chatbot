@@ -2,8 +2,6 @@ import React from 'react';
 import { ThemeProvider } from 'styled-components';
 import ChatBot from '../../lib/index';
 
-import { Validation, HelpMessage } from './Validation';
-
 const otherFontTheme = {
   background: '#f5f8fb',
   fontFamily: 'Helvetica Neue',
@@ -18,104 +16,98 @@ const otherFontTheme = {
 
 const steps = [
   {
-    id: 'vornameFrage',
-    message: 'Vorname',
-    trigger: 'vorname',
+    id: 'start',
+    message: 'Please enter some information about you:',
+    trigger: 'Firstname',
   },
   {
-    id: 'vorname',
+    id: 'Firstname',
+    placeholder: 'Firstname',
     user: true,
-    trigger: 'validate',
-    metadata: {
-      triggerNext: 'ausbildungNachnameFrage',
-      errorMessage: 'Vorname failed, try again',
-    },
+    // inputAttributes: {
+    //   name: 'firstname',
+    //   autoComplete: 'given-name',
+    // },
+    trigger: 'Lastname',
   },
   {
-    id: 'ausbildungNachnameFrage',
-    message: 'ausbildung nachname',
-    trigger: 'ausbildungNachname',
-  },
-  {
-    id: 'ausbildungNachname',
-    update: 'nachname',
-    trigger: 'validate',
-    metadata: {
-      id: 'ausbildungNachname',
-      triggerNext: 'mobilenummerFrage',
-      errorMessage: 'Ausbildung Mobile nummer falsch.',
-    },
-  },
-  {
-    id: 'nachnameFrage',
-    message: 'Nachname:',
-    trigger: 'nachname',
-  },
-  {
-    id: 'nachname',
+    id: 'Lastname',
+    placeholder: 'Lastname',
     user: true,
-    trigger: 'validate',
-    metadata: {
-      triggerNext: 'end',
+    inputAttributes: {
+      name: 'lastname',
+      autoComplete: 'family-name',
     },
+    trigger: 'Email',
   },
   {
-    id: 'mobilenummerFrage',
-    message: 'OK: Mobile nummer Update:',
-    trigger: 'mobilenummerUpdate',
-  },
-  {
-    id: 'mobilenummerUpdate',
-    update: 'mobilenummer',
-    trigger: 'validate',
-    metadata: {
-      id: 'mobilenummerUpdate',
-      someMetadata: 'Am I getting copied over?',
-      errorMessage: 'GUGUS update mobile nummer error',
-      triggerNext: 'special',
-    },
-  },
-  {
-    id: 'mobilenummer',
+    id: 'Email',
+    placeholder: 'Email',
     user: true,
-    trigger: 'validate',
-    metadata: {
-      errorMessage: 'mobilenummer original',
-      triggerNext: 'vornameFrage',
+    inputAttributes: {
+      type: 'email',
+      name: 'email',
+      autoComplete: 'home email',
     },
+    trigger: 'Phone',
   },
   {
-    id: 'validate',
-    replace: true,
-    component: <Validation />,
-    delay: 8,
-    waitAction: true,
-    metadata: {
-      errorMessage: 'Val failed',
+    id: 'Phone',
+    placeholder: 'Phone',
+    user: true,
+    inputAttributes: {
+      type: 'tel',
+      name: 'tel',
+      autoComplete: 'tel',
     },
+    trigger: 'checking',
   },
   {
-    id: 'help-message',
-    component: <HelpMessage />,
-    asMessage: true,
-    waitAction: true,
+    id: 'checking',
+    message: 'OK, all done. Some other infos to add?',
+    trigger: 'Infos',
   },
   {
-    id: 'end',
+    id: 'Infos',
+    placeholder: 'Some text',
+    user: true,
+    inputAttributes: {
+      autoComplete: 'off',
+    },
+    trigger: 'updateTest',
+  },
+  {
+    id: 'updateTest',
+    message: 'Next, should be again an e-mail field:',
+    trigger: 'EmailUpdate',
+  },
+  {
+    id: 'EmailUpdate',
+    update: 'Email',
+    trigger: 'End',
+  },
+  {
+    id: 'End',
     message: 'Finish',
-    end: true,
-  },
-  {
-    id: 'special',
-    message: 'Spacial case reached',
     end: true,
   },
 ];
 
+// Initially it needs any working autoComplete value here,
+// otherwise it might not work later when changing type later to tel.
+// Best might be to take the first needed type.
+const inputAttributes = {
+  autoComplete: 'firstname',
+};
 
 const ThemedExample = () => (
   <ThemeProvider theme={otherFontTheme}>
-    <ChatBot steps={steps} />
+    <ChatBot
+      steps={steps}
+      enableMobileAutoFocus={true}
+      userDelay={0}
+      inputAttributes={inputAttributes}
+    />
   </ThemeProvider>
 );
 
