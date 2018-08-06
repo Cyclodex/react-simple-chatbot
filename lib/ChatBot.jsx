@@ -2,18 +2,20 @@ import _ from 'lodash';
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Random from 'random-id';
-import { CustomStep, OptionsStep, TextStep } from './steps';
+import { CustomStep, OptionsStep, TextStep } from './steps_components';
 import schema from './schemas/schema';
 import * as storage from './storage';
-import ChatBotContainer from './ChatBotContainer';
-import Content from './Content';
-import Header from './Header';
-import HeaderTitle from './HeaderTitle';
-import HeaderIcon from './HeaderIcon';
-import FloatButton from './FloatButton';
-import Footer from './Footer';
-import Input from './Input';
-import SubmitButton from './SubmitButton';
+import {
+  ChatBotContainer,
+  Content,
+  Header,
+  HeaderTitle,
+  HeaderIcon,
+  FloatButton,
+  Footer,
+  Input,
+  SubmitButton,
+} from './components';
 import Recognition from './recognition';
 import { ChatIcon, CloseIcon, SubmitIcon, MicIcon } from './icons';
 import { isMobile } from './utils';
@@ -524,6 +526,7 @@ class ChatBot extends Component {
       className,
       contentStyle,
       floating,
+      floatingStyle,
       footerStyle,
       headerComponent,
       headerTitle,
@@ -563,6 +566,7 @@ class ChatBot extends Component {
         {floating && (
           <FloatButton
             className="rsc-float-button"
+            style={floatingStyle}
             opened={opened}
             onClick={() => this.toggleChatBot(true)}
           >
@@ -572,6 +576,7 @@ class ChatBot extends Component {
         <ChatBotContainer
           className="rsc-container"
           floating={floating}
+          floatingStyle={floatingStyle}
           opened={opened}
           style={style}
           width={width}
@@ -639,6 +644,7 @@ ChatBot.propTypes = {
   customStyle: PropTypes.object,
   enableMobileAutoFocus: PropTypes.bool,
   floating: PropTypes.bool,
+  floatingStyle: PropTypes.object,
   footerStyle: PropTypes.object,
   handleEnd: PropTypes.func,
   headerComponent: PropTypes.element,
@@ -677,6 +683,7 @@ ChatBot.defaultProps = {
   customDelay: 1000,
   enableMobileAutoFocus: false,
   floating: false,
+  floatingStyle: {},
   footerStyle: {},
   handleEnd: undefined,
   headerComponent: undefined,
