@@ -285,7 +285,7 @@ class ChatBot extends Component {
 
       previousStep = currentStep;
       currentStep = nextStep;
-      
+
       // TODO: Cyclodex: Update dynamic options: (not sure if here or somewhere else ?)
       currentStep.options = this.getOptions(currentStep, steps);
 
