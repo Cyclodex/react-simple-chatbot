@@ -2,30 +2,6 @@ import React from 'react';
 import { ThemeProvider } from 'styled-components';
 import ChatBot from '../../lib/index';
 
-function showExistingOptions(step, steps) {
-  const options = [];
-
-  // Chatbot custom logic:
-  const defaultOptions = [
-    { value: 'Firstname', label: "Firstname", trigger: 'updateTest' },
-    { value: 'Lastname', label: "Lastname", trigger: 'updateTest' },
-    // TODO: Add Ausbildungsdatum
-    { value: 'geburtstag', label: "geburtstag", trigger: 'updateTest' },
-    { value: 'anythingelse', label: "anythingelse", trigger: 'updateTest' },
-    { value: 'Phone', label: "Phone", trigger: 'updateTest' },
-    { value: 'Email', label: "Email", trigger: 'EmailUpdate' },
-  ];
-
-  defaultOptions.forEach((option) => {
-    // Only show already used steps, remove others
-    if (steps[option.value]) {
-      options.push(option);
-    }
-  });
-
-  return options;
-}
-
 const otherFontTheme = {
   background: '#f5f8fb',
   fontFamily: 'Helvetica Neue',
@@ -128,6 +104,32 @@ const steps = [
 const inputAttributes = {
   autoComplete: 'firstname',
 };
+
+function showExistingOptions(currentStep, renderedSteps) {
+  const options = [];
+
+  // Chatbot custom logic:
+  const defaultOptions = [
+    { value: 'Firstname', label: "Firstname", trigger: 'updateTest' },
+    { value: 'Lastname', label: "Lastname", trigger: 'updateTest' },
+    // TODO: Add Ausbildungsdatum
+    { value: 'geburtstag', label: "geburtstag", trigger: 'updateTest' },
+    { value: 'anythingelse', label: "anythingelse", trigger: 'updateTest' },
+    { value: 'Phone', label: "Phone", trigger: 'updateTest' },
+    { value: 'Email', label: "Email", trigger: 'EmailUpdate' },
+  ];
+
+  defaultOptions.forEach((option) => {
+    // Only show already used steps, remove others
+    Object.keys(renderedSteps).forEach((key) => {
+      if (steps[key] && steps[key].id === option.value) {
+        options.push(option);
+      }
+    });
+  });
+
+  return options;
+}
 
 const ThemedExample = () => (
   <ThemeProvider theme={otherFontTheme}>
