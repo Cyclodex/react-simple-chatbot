@@ -287,7 +287,7 @@ class ChatBot extends Component {
       currentStep = nextStep;
 
       // TODO: Cyclodex: Update dynamic options: (not sure if here or somewhere else ?)
-      currentStep.options = this.getOptions(currentStep, steps);
+      currentStep.options = this.getOptions(currentStep, renderedSteps);
 
       this.setState({ renderedSteps, currentStep, previousStep }, () => {
         if (nextStep.user) {
@@ -497,7 +497,7 @@ class ChatBot extends Component {
         <OptionsStep
           key={index}
           step={step}
-          steps={steps}
+          renderedSteps={renderedSteps}
           triggerNextStep={this.triggerNextStep}
           bubbleOptionStyle={bubbleOptionStyle}
         />

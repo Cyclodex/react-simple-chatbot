@@ -16,10 +16,10 @@ class OptionsStep extends Component {
   }
 
   componentWillMount() {
-    const { step, steps } = this.props;
+    const { step, renderedSteps } = this.props;
 
     if (typeof step.options === 'function') {
-      const newOptions = step.options(step, steps);
+      const newOptions = step.options(step, renderedSteps);
       this.setState({ options: newOptions });
     } else {
       this.setState({ options: this.props.step.options });
@@ -67,13 +67,13 @@ class OptionsStep extends Component {
 
 OptionsStep.propTypes = {
   step: PropTypes.object.isRequired,
-  steps: PropTypes.object,
+  renderedSteps: PropTypes.array,
   triggerNextStep: PropTypes.func.isRequired,
   bubbleOptionStyle: PropTypes.object.isRequired,
 };
 
 OptionsStep.defaultProps = {
-  steps: {},
+  renderedSteps: {},
 };
 
 export default OptionsStep;
