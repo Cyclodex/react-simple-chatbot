@@ -73,16 +73,16 @@ const steps = [
       name: 'email',
       autoComplete: 'home email',
     },
-    trigger: 'checking',
+    trigger: 'Options',
   },
   {
     id: 'checking',
     message: 'OK, all done. Some other infos to add?',
-    trigger: 'Infos',
+    trigger: 'Options',
   },
   {
-    id: 'Infos',
-    placeholder: 'Some text',
+    id: 'Options',
+    placeholder: 'Options text',
     options: showExistingOptions,
     // options: [
     //   { value: 'Firstname', label: "Firstname", trigger: 'updateTest' },
@@ -133,6 +133,7 @@ const ThemedExample = () => (
   <ThemeProvider theme={otherFontTheme}>
     <ChatBot
       steps={steps}
+      cache={true}
       enableMobileAutoFocus={true}
       userDelay={0}
       inputAttributes={inputAttributes}

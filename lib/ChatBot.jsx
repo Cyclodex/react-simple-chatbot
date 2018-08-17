@@ -268,6 +268,7 @@ class ChatBot extends Component {
         nextStep = Object.assign({}, steps[updateStep.update]);
 
         if (nextStep.options) {
+          // TODO: Verify dynamic options
           for (let i = 0, len = nextStep.options.length; i < len; i += 1) {
             nextStep.options[i].trigger = updateStep.trigger;
           }
@@ -284,6 +285,9 @@ class ChatBot extends Component {
 
       previousStep = currentStep;
       currentStep = nextStep;
+      
+      // TODO: Cyclodex: Update dynamic options: (not sure if here or somewhere else ?)
+      currentStep.options = this.getOptions(currentStep, steps);
 
       this.setState({ renderedSteps, currentStep, previousStep }, () => {
         if (nextStep.user) {
