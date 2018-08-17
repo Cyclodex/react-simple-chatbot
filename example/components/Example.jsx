@@ -2,6 +2,30 @@ import React from 'react';
 import { ThemeProvider } from 'styled-components';
 import ChatBot from '../../lib/index';
 
+function showExistingOptions(step, steps) {
+  const options = [];
+
+  // Chatbot custom logic:
+  const defaultOptions = [
+    { value: 'Firstname', label: "Firstname", trigger: 'updateTest' },
+    { value: 'Lastname', label: "Lastname", trigger: 'updateTest' },
+    // TODO: Add Ausbildungsdatum
+    { value: 'geburtstag', label: "geburtstag", trigger: 'updateTest' },
+    { value: 'anythingelse', label: "anythingelse", trigger: 'updateTest' },
+    { value: 'Phone', label: "Phone", trigger: 'updateTest' },
+    { value: 'Email', label: "Email", trigger: 'EmailUpdate' },
+  ];
+
+  defaultOptions.forEach((option) => {
+    // Only show already used steps, remove others
+    if (steps[option.value]) {
+      options.push(option);
+    }
+  });
+
+  return options;
+}
+
 const otherFontTheme = {
   background: '#f5f8fb',
   fontFamily: 'Helvetica Neue',
@@ -49,7 +73,36 @@ const steps = [
       name: 'email',
       autoComplete: 'home email',
     },
-    trigger: 'Phone',
+    trigger: 'checking',
+  },
+  {
+    id: 'checking',
+    message: 'OK, all done. Some other infos to add?',
+    trigger: 'Infos',
+  },
+  {
+    id: 'Infos',
+    placeholder: 'Some text',
+    options: showExistingOptions,
+    // options: [
+    //   { value: 'Firstname', label: "Firstname", trigger: 'updateTest' },
+    //   { value: 'Lastname', label: "Lastname", trigger: 'updateTest' },
+    //   // TODO: Add Ausbildungsdatum
+    //   { value: 'geburtstag', label: "geburtstag", trigger: 'updateTest' },
+    //   { value: 'anythingelse', label: "anythingelse", trigger: 'updateTest' },
+    //   { value: 'Phone', label: "Phone", trigger: 'updateTest' },
+    //   { value: 'Email', label: "Email", trigger: 'EmailUpdate' },
+    // ],
+  },
+  {
+    id: 'updateTest',
+    message: 'Next, should be again an e-mail field:',
+    trigger: 'EmailUpdate',
+  },
+  {
+    id: 'EmailUpdate',
+    update: 'Email',
+    trigger: 'End',
   },
   {
     id: 'Phone',
@@ -61,30 +114,6 @@ const steps = [
       autoComplete: 'tel',
     },
     trigger: 'checking',
-  },
-  {
-    id: 'checking',
-    message: 'OK, all done. Some other infos to add?',
-    trigger: 'Infos',
-  },
-  {
-    id: 'Infos',
-    placeholder: 'Some text',
-    user: true,
-    inputAttributes: {
-      autoComplete: 'off',
-    },
-    trigger: 'updateTest',
-  },
-  {
-    id: 'updateTest',
-    message: 'Next, should be again an e-mail field:',
-    trigger: 'EmailUpdate',
-  },
-  {
-    id: 'EmailUpdate',
-    update: 'Email',
-    trigger: 'End',
   },
   {
     id: 'End',
