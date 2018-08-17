@@ -182,6 +182,10 @@ class ChatBot extends Component {
     return typeof trigger === 'function' ? trigger({ value, steps }) : trigger;
   }
 
+  getOptions(step, steps) {
+    return typeof step.options === 'function' ? step.options(step, steps) : step.options;
+  }
+
   getStepMessage(message) {
     const { previousSteps } = this.state;
     const lastStepIndex = previousSteps.length > 0 ? previousSteps.length - 1 : 0;
@@ -226,7 +230,9 @@ class ChatBot extends Component {
     if (isEnd) {
       this.handleEnd();
     } else if (currentStep.options && data) {
-      const option = currentStep.options.filter(o => o.value === data.value)[0];
+      // TODO: verify this change
+      const stepOptions = this.getOptions(currentStep, steps);
+      const option = stepOptions.filter(o => o.value === data.value)[0];
       const trigger = this.getTriggeredStep(option.trigger, currentStep.value);
       delete currentStep.options;
 
@@ -487,6 +493,7 @@ class ChatBot extends Component {
         <OptionsStep
           key={index}
           step={step}
+          steps={steps}
           triggerNextStep={this.triggerNextStep}
           bubbleOptionStyle={bubbleOptionStyle}
         />

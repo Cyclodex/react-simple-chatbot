@@ -15,6 +15,17 @@ class OptionsStep extends Component {
     this.onOptionClick = this.onOptionClick.bind(this);
   }
 
+  componentWillMount() {
+    const { step, steps } = this.props;
+
+    if (typeof step.options === 'function') {
+      const newOptions = step.options(step, steps);
+      this.setState({ options: newOptions });
+    } else {
+      this.setState({ options: this.props.step.options });
+    }
+  }
+
   onOptionClick({ value }) {
     this.props.triggerNextStep({ value });
   }
@@ -42,7 +53,7 @@ class OptionsStep extends Component {
   }
 
   render() {
-    const { options } = this.props.step;
+    const { options } = this.state;
 
     return (
       <OptionsStepContainer className="rsc-os">
@@ -56,8 +67,13 @@ class OptionsStep extends Component {
 
 OptionsStep.propTypes = {
   step: PropTypes.object.isRequired,
+  steps: PropTypes.object,
   triggerNextStep: PropTypes.func.isRequired,
   bubbleOptionStyle: PropTypes.object.isRequired,
+};
+
+OptionsStep.defaultProps = {
+  steps: {},
 };
 
 export default OptionsStep;
