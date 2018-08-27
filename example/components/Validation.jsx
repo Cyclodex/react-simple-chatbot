@@ -2,13 +2,18 @@ import React, { Component } from 'react';
 
 export class Validation extends Component {
   componentWillMount() {
-    const { previousStep } = this.props;
-    const { metadata } = previousStep;
+    console.log(this.props);
+    const { renderedSteps } = this.props;
+
+    renderedSteps.map(step => console.log(step.id));
+    
+    // const { metadata } = previousStep;
 
     // We test simply for input == "fail" to fail the question. You would call some validation here.
-    const trigger = previousStep.value === 'fail' ? 'help-message' : metadata.triggerNext;
+    // const trigger = previousStep.value === 'fail' ? 'help-message' : metadata.triggerNext;
 
-    this.props.triggerNextStep({value: metadata.triggerNext, trigger });
+    // this.props.triggerNextStep({value: metadata.triggerNext, trigger });
+    this.props.triggerNextStep({ trigger: renderedSteps[renderedSteps.length - 3].id });
   }
 
   render() {

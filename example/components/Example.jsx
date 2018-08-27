@@ -2,6 +2,8 @@ import React from 'react';
 import { ThemeProvider } from 'styled-components';
 import ChatBot from '../../lib/index';
 
+import { Validation } from './Validation';
+
 const otherFontTheme = {
   background: '#f5f8fb',
   fontFamily: 'Helvetica Neue',
@@ -38,7 +40,7 @@ const steps = [
       name: 'lastname',
       autoComplete: 'family-name',
     },
-    trigger: 'Email',
+    trigger: 'checking',
   },
   {
     id: 'Email',
@@ -49,12 +51,18 @@ const steps = [
       name: 'email',
       autoComplete: 'home email',
     },
-    trigger: 'Options',
+    trigger: 'checking',
   },
   {
     id: 'checking',
     message: 'OK, all done. Some other infos to add?',
-    trigger: 'Options',
+    trigger: 'Component',
+  },
+  {
+    id: 'Component',
+    component: <Validation />,
+    waitAction: true,
+    trigger: 'End',
   },
   {
     id: 'Options',
@@ -135,7 +143,7 @@ const ThemedExample = () => (
   <ThemeProvider theme={otherFontTheme}>
     <ChatBot
       steps={steps}
-      cache={true}
+      cache={false}
       enableMobileAutoFocus={true}
       userDelay={0}
       inputAttributes={inputAttributes}
