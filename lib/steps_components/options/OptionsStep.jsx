@@ -73,7 +73,7 @@ OptionsStep.propTypes = {
 };
 
 OptionsStep.defaultProps = {
-  renderedSteps: {},
+  renderedSteps: [],
 };
 
 export default OptionsStep;
