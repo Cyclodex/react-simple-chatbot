@@ -488,6 +488,7 @@ class ChatBot extends Component {
           style={customStyle}
           previousStep={previousStep}
           triggerNextStep={this.triggerNextStep}
+          renderedSteps={renderedSteps}
         />
       );
     }
