@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Random from 'random-id';
@@ -12,18 +11,33 @@ import {
   HeaderTitle,
   HeaderIcon,
   FloatButton,
+  FloatingIcon,
   Footer,
   Input,
-  SubmitButton,
+  SubmitButton
 } from './components';
 import Recognition from './recognition';
 import { ChatIcon, CloseIcon, SubmitIcon, MicIcon } from './icons';
 import { isMobile } from './utils';
+import { speakFn } from './speechSynthesis';
 
 class ChatBot extends Component {
   /* istanbul ignore next */
   constructor(props) {
     super(props);
+
+    this.content = null;
+    this.input = null;
+
+    this.supportsScrollBehavior = false;
+
+    this.setContentRef = element => {
+      this.content = element;
+    };
+
+    this.setInputRef = element => {
+      this.input = element;
+    };
 
     this.state = {
       renderedSteps: [],
@@ -37,23 +51,14 @@ class ChatBot extends Component {
       inputInvalid: false,
       speaking: false,
       recognitionEnable: props.recognitionEnable && Recognition.isSupported(),
-      defaultUserSettings: {},
+      defaultUserSettings: {}
     };
 
-    this.renderStep = this.renderStep.bind(this);
-    this.getTriggeredStep = this.getTriggeredStep.bind(this);
-    this.generateRenderedStepsById = this.generateRenderedStepsById.bind(this);
-    this.triggerNextStep = this.triggerNextStep.bind(this);
-    this.onResize = this.onResize.bind(this);
-    this.onValueChange = this.onValueChange.bind(this);
-    this.onRecognitionChange = this.onRecognitionChange.bind(this);
-    this.onRecognitionEnd = this.onRecognitionEnd.bind(this);
-    this.onRecognitionStop = this.onRecognitionStop.bind(this);
-    this.handleKeyPress = this.handleKeyPress.bind(this);
-    this.handleSubmitButton = this.handleSubmitButton.bind(this);
+    this.speak = speakFn(props.speechSynthesis);
   }
 
-  componentWillMount() {
+  componentDidMount() {
+    const { steps } = this.props;
     const {
       botDelay,
       botAvatar,
@@ -62,16 +67,16 @@ class ChatBot extends Component {
       customDelay,
       enableMobileAutoFocus,
       userAvatar,
-      userDelay,
+      userDelay
     } = this.props;
-    const steps = {};
+    const chatSteps = {};
 
     const defaultBotSettings = { delay: botDelay, avatar: botAvatar };
-    const defaultUserSettings = { delay: userDelay, avatar: userAvatar };
+    const defaultUserSettings = { delay: userDelay, avatar: userAvatar, hideInput: false };
     const defaultCustomSettings = { delay: customDelay };
 
-    for (let i = 0, len = this.props.steps.length; i < len; i += 1) {
-      const step = this.props.steps[i];
+    for (let i = 0, len = steps.length; i < len; i += 1) {
+      const step = steps[i];
       let settings = {};
 
       if (step.user) {
@@ -82,37 +87,56 @@ class ChatBot extends Component {
         settings = defaultCustomSettings;
       }
 
-      steps[step.id] = Object.assign({}, settings, schema.parse(step));
+      chatSteps[step.id] = Object.assign({}, settings, schema.parse(step));
     }
 
-    schema.checkInvalidIds(steps);
+    schema.checkInvalidIds(chatSteps);
 
-    const firstStep = this.props.steps[0];
+    const firstStep = steps[0];
 
     if (firstStep.message) {
-      const message = firstStep.message;
+      const { message } = firstStep;
       firstStep.message = typeof message === 'function' ? message() : message;
-      steps[firstStep.id].message = firstStep.message;
+      chatSteps[firstStep.id].message = firstStep.message;
     }
 
-    const {
-      currentStep,
-      previousStep,
-      previousSteps,
-      renderedSteps,
-    } = storage.getData({
-      cacheName,
-      cache,
-      firstStep,
-      steps,
-    }, () => {
-      // focus input if last step cached is a user step
-      this.setState({ disabled: false }, () => {
-        if (enableMobileAutoFocus || !isMobile()) {
-          this.input.focus();
-        }
-      });
-    });
+    const { recognitionEnable } = this.state;
+    const { recognitionLang } = this.props;
+
+    if (recognitionEnable) {
+      this.recognition = new Recognition(
+        this.onRecognitionChange,
+        this.onRecognitionEnd,
+        this.onRecognitionStop,
+        recognitionLang
+      );
+    }
+
+    this.supportsScrollBehavior = 'scrollBehavior' in document.documentElement.style;
+
+    if (this.content) {
+      this.content.addEventListener('DOMNodeInserted', this.onNodeInserted);
+      window.addEventListener('resize', this.onResize);
+    }
+
+    const { currentStep, previousStep, previousSteps, renderedSteps } = storage.getData(
+      {
+        cacheName,
+        cache,
+        firstStep,
+        steps: chatSteps
+      },
+      () => {
+        // focus input if last step cached is a user step
+        this.setState({ disabled: false }, () => {
+          if (enableMobileAutoFocus || !isMobile()) {
+            if (this.input) {
+              this.input.focus();
+            }
+          }
+        });
+      }
+    );
 
     this.setState({
       currentStep,
@@ -120,100 +144,103 @@ class ChatBot extends Component {
       previousStep,
       previousSteps,
       renderedSteps,
-      steps,
+      steps: chatSteps
     });
   }
 
-  componentDidMount() {
-    const { recognitionEnable } = this.state;
-    const { recognitionLang } = this.props;
-    if (recognitionEnable) {
-      this.recognition = new Recognition(
-        this.onRecognitionChange,
-        this.onRecognitionEnd,
-        this.onRecognitionStop,
-        recognitionLang,
-      );
+  static getDerivedStateFromProps(props, state) {
+    const { opened, toggleFloating } = props;
+    if (toggleFloating !== undefined && opened !== undefined && opened !== state.opened) {
+      return {
+        ...state,
+        opened
+      };
     }
-    this.content.addEventListener('DOMNodeInserted', this.onNodeInserted);
-    window.addEventListener('resize', this.onResize);
-  }
-
-  componentWillUpdate(nextProps, nextState) {
-    const { opened } = nextProps;
-
-    if (opened !== undefined && opened !== nextState.opened) {
-      this.setState({ opened });
-    }
+    return state;
   }
 
   componentWillUnmount() {
-    this.content.removeEventListener('DOMNodeInserted', this.onNodeInserted);
-    window.removeEventListener('resize', this.onResize);
+    if (this.content) {
+      this.content.removeEventListener('DOMNodeInserted', this.onNodeInserted);
+      window.removeEventListener('resize', this.onResize);
+    }
   }
 
-  onNodeInserted(event) {
-    event.currentTarget.scrollTop = event.currentTarget.scrollHeight;
-  }
+  onNodeInserted = event => {
+    const { currentTarget: target } = event;
+    const { enableSmoothScroll } = this.props;
 
-  onResize() {
+    if (enableSmoothScroll && this.supportsScrollBehavior) {
+      target.scroll({
+        top: target.scrollHeight,
+        left: 0,
+        behavior: 'smooth'
+      });
+    } else {
+      target.scrollTop = target.scrollHeight;
+    }
+  };
+
+  onResize = () => {
     this.content.scrollTop = this.content.scrollHeight;
-  }
+  };
 
-  onRecognitionChange(value) {
+  onRecognitionChange = value => {
     this.setState({ inputValue: value });
-  }
+  };
 
-  onRecognitionEnd() {
+  onRecognitionEnd = () => {
     this.setState({ speaking: false });
     this.handleSubmitButton();
-  }
+  };
 
-  onRecognitionStop() {
+  onRecognitionStop = () => {
     this.setState({ speaking: false });
-  }
+  };
 
-  onValueChange(event) {
+  onValueChange = event => {
     this.setState({ inputValue: event.target.value });
-  }
+  };
 
-  getTriggeredStep(trigger, value) {
+  getTriggeredStep = (trigger, value) => {
     const steps = this.generateRenderedStepsById();
     return typeof trigger === 'function' ? trigger({ value, steps }) : trigger;
-  }
+  };
 
   getOptions(step, steps) {
     return typeof step.options === 'function' ? step.options(step, steps) : step.options;
   }
 
-  getStepMessage(message) {
+  getStepMessage = message => {
     const { previousSteps } = this.state;
     const lastStepIndex = previousSteps.length > 0 ? previousSteps.length - 1 : 0;
     const steps = this.generateRenderedStepsById();
     const previousValue = previousSteps[lastStepIndex].value;
     return typeof message === 'function' ? message({ previousValue, steps }) : message;
-  }
+  };
 
-  generateRenderedStepsById() {
+  generateRenderedStepsById = () => {
     const { previousSteps } = this.state;
     const steps = {};
 
     for (let i = 0, len = previousSteps.length; i < len; i += 1) {
       const { id, message, value, metadata } = previousSteps[i];
-      steps[id] = { id, message, value, metadata };
+
+      steps[id] = {
+        id,
+        message,
+        value,
+        metadata
+      };
     }
 
     return steps;
-  }
+  };
 
-  triggerNextStep(data) {
+  triggerNextStep = data => {
     const { enableMobileAutoFocus } = this.props;
-    const {
-      defaultUserSettings,
-      previousSteps,
-      renderedSteps,
-      steps,
-    } = this.state;
+    const { defaultUserSettings, previousSteps, renderedSteps, steps } = this.state;
+
     let { currentStep, previousStep } = this.state;
     const isEnd = currentStep.end;
 
@@ -240,7 +267,7 @@ class ChatBot extends Component {
       currentStep = Object.assign({}, currentStep, option, defaultUserSettings, {
         user: true,
         message: option.label,
-        trigger,
+        trigger
       });
 
       renderedSteps.pop();
@@ -251,7 +278,7 @@ class ChatBot extends Component {
       this.setState({
         currentStep,
         renderedSteps,
-        previousSteps,
+        previousSteps
       });
     } else if (currentStep.trigger) {
       if (currentStep.replace) {
@@ -293,7 +320,9 @@ class ChatBot extends Component {
         if (nextStep.user) {
           this.setState({ disabled: false }, () => {
             if (enableMobileAutoFocus || !isMobile()) {
-              this.input.focus();
+              if (this.input) {
+                this.input.focus();
+              }
             }
           });
         } else {
@@ -312,37 +341,56 @@ class ChatBot extends Component {
           currentStep,
           previousStep,
           previousSteps,
-          renderedSteps,
+          renderedSteps
         });
       }, 300);
     }
-  }
+  };
 
-  handleEnd() {
-    if (this.props.handleEnd) {
+  handleEnd = () => {
+    const { handleEnd } = this.props;
+
+    if (handleEnd) {
       const { previousSteps } = this.state;
 
-      const renderedSteps = previousSteps.map((step) => {
+      const renderedSteps = previousSteps.map(step => {
         const { id, message, value, metadata } = step;
-        return { id, message, value, metadata };
+
+        return {
+          id,
+          message,
+          value,
+          metadata
+        };
       });
 
       const steps = [];
 
       for (let i = 0, len = previousSteps.length; i < len; i += 1) {
         const { id, message, value, metadata } = previousSteps[i];
-        steps[id] = { id, message, value, metadata };
+
+        steps[id] = {
+          id,
+          message,
+          value,
+          metadata
+        };
       }
 
       const values = previousSteps.filter(step => step.value).map(step => step.value);
 
-      this.props.handleEnd({ renderedSteps, steps, values });
+      handleEnd({ renderedSteps, steps, values });
     }
-  }
+  };
 
-  isLastPosition(step) {
+  isInputValueEmpty = () => {
+    const { inputValue } = this.state;
+    return !inputValue || inputValue.length === 0;
+  };
+
+  isLastPosition = step => {
     const { renderedSteps } = this.state;
-    const length = renderedSteps.length;
+    const { length } = renderedSteps;
     const stepIndex = renderedSteps.map(s => s.key).indexOf(step.key);
 
     if (length <= 1 || stepIndex + 1 === length) {
@@ -358,9 +406,9 @@ class ChatBot extends Component {
 
     const isLast = step.user !== nextStep.user;
     return isLast;
-  }
+  };
 
-  isFirstPosition(step) {
+  isFirstPosition = step => {
     const { renderedSteps } = this.state;
     const stepIndex = renderedSteps.map(s => s.key).indexOf(step.key);
 
@@ -377,27 +425,29 @@ class ChatBot extends Component {
 
     const isFirst = step.user !== lastStep.user;
     return isFirst;
-  }
+  };
 
-  handleKeyPress(event) {
+  handleKeyPress = event => {
     if (event.key === 'Enter') {
       this.submitUserMessage();
     }
-  }
+  };
 
-  handleSubmitButton() {
-    const { inputValue, speaking, recognitionEnable } = this.state;
-    if ((_.isEmpty(inputValue) || speaking) && recognitionEnable) {
+  handleSubmitButton = () => {
+    const { speaking, recognitionEnable } = this.state;
+
+    if ((this.isInputValueEmpty() || speaking) && recognitionEnable) {
       this.recognition.speak();
       if (!speaking) {
         this.setState({ speaking: true });
       }
       return;
     }
-    this.submitUserMessage();
-  }
 
-  submitUserMessage() {
+    this.submitUserMessage();
+  };
+
+  submitUserMessage = () => {
     const { defaultUserSettings, inputValue, previousSteps, renderedSteps } = this.state;
     let { currentStep } = this.state;
 
@@ -406,7 +456,7 @@ class ChatBot extends Component {
     if (!isInvalid) {
       const step = {
         message: inputValue,
-        value: inputValue,
+        value: inputValue
       };
 
       currentStep = Object.assign({}, defaultUserSettings, currentStep, step);
@@ -414,58 +464,73 @@ class ChatBot extends Component {
       renderedSteps.push(currentStep);
       previousSteps.push(currentStep);
 
-      this.setState({
-        currentStep,
-        renderedSteps,
-        previousSteps,
-        disabled: true,
-        inputValue: '',
-      }, () => {
-        this.input.blur();
-      });
+      this.setState(
+        {
+          currentStep,
+          renderedSteps,
+          previousSteps,
+          disabled: true,
+          inputValue: ''
+        },
+        () => {
+          if (this.input) {
+            this.input.blur();
+          }
+        }
+      );
     }
-  }
+  };
 
-  checkInvalidInput() {
+  checkInvalidInput = () => {
     const { enableMobileAutoFocus } = this.props;
     const { currentStep, inputValue } = this.state;
     const result = currentStep.validator(inputValue);
     const value = inputValue;
 
     if (typeof result !== 'boolean' || !result) {
-      this.setState({
-        inputValue: result.toString(),
-        inputInvalid: true,
-        disabled: true,
-      }, () => {
-        setTimeout(() => {
-          this.setState({
-            inputValue: value,
-            inputInvalid: false,
-            disabled: false,
-          }, () => {
-            if (enableMobileAutoFocus || !isMobile()) {
-              this.input.focus();
-            }
-          });
-        }, 2000);
-      });
+      this.setState(
+        {
+          inputValue: result.toString(),
+          inputInvalid: true,
+          disabled: true
+        },
+        () => {
+          setTimeout(() => {
+            this.setState(
+              {
+                inputValue: value,
+                inputInvalid: false,
+                disabled: false
+              },
+              () => {
+                if (enableMobileAutoFocus || !isMobile()) {
+                  if (this.input) {
+                    this.input.focus();
+                  }
+                }
+              }
+            );
+          }, 2000);
+        }
+      );
 
       return true;
     }
 
     return false;
-  }
+  };
 
-  toggleChatBot(opened) {
-    if (this.props.toggleFloating) {
-      this.props.toggleFloating({ opened });
+  toggleChatBot = opened => {
+    const { toggleFloating } = this.props;
+
+    if (toggleFloating) {
+      toggleFloating({ opened });
     } else {
       this.setState({ opened });
     }
-  }
+  };
 
-  renderStep(step, index) {
+  renderStep = (step, index) => {
     const { renderedSteps } = this.state;
     const {
       avatarStyle,
@@ -474,6 +539,7 @@ class ChatBot extends Component {
       customStyle,
       hideBotAvatar,
       hideUserAvatar,
+      speechSynthesis
     } = this.props;
     const { options, component, asMessage } = step;
     const steps = this.generateRenderedStepsById();
@@ -483,10 +549,12 @@ class ChatBot extends Component {
       return (
         <CustomStep
           key={index}
+          speak={this.speak}
           step={step}
           steps={steps}
           style={customStyle}
           previousStep={previousStep}
+          previousValue={previousStep.value}
           triggerNextStep={this.triggerNextStep}
           renderedSteps={renderedSteps}
         />
@@ -499,6 +567,8 @@ class ChatBot extends Component {
           key={index}
           step={step}
           renderedSteps={renderedSteps}
+          speak={this.speak}
+          previousValue={previousStep.value}
           triggerNextStep={this.triggerNextStep}
           bubbleOptionStyle={bubbleOptionStyle}
         />
@@ -510,6 +580,7 @@ class ChatBot extends Component {
         key={index}
         step={step}
         steps={steps}
+        speak={this.speak}
         previousStep={previousStep}
         previousValue={previousStep.value}
         triggerNextStep={this.triggerNextStep}
@@ -517,11 +588,12 @@ class ChatBot extends Component {
         bubbleStyle={bubbleStyle}
         hideBotAvatar={hideBotAvatar}
         hideUserAvatar={hideUserAvatar}
+        speechSynthesis={speechSynthesis}
         isFirst={this.isFirstPosition(step)}
         isLast={this.isLastPosition(step)}
       />
     );
-  }
+  };
 
   render() {
     const {
@@ -532,12 +604,13 @@ class ChatBot extends Component {
       opened,
       renderedSteps,
       speaking,
-      recognitionEnable,
+      recognitionEnable
     } = this.state;
     const {
       className,
       contentStyle,
       floating,
+      floatingIcon,
       floatingStyle,
       footerStyle,
       headerComponent,
@@ -551,7 +624,7 @@ class ChatBot extends Component {
       style,
       submitButtonStyle,
       width,
-      height,
+      height
     } = this.props;
 
     const header = headerComponent || (
@@ -566,10 +639,11 @@ class ChatBot extends Component {
     );
 
     const icon =
-      (_.isEmpty(inputValue) || speaking) && recognitionEnable ? <MicIcon /> : <SubmitIcon />;
+      (this.isInputValueEmpty() || speaking) && recognitionEnable ? <MicIcon /> : <SubmitIcon />;
 
-    const inputPlaceholder = speaking ? recognitionPlaceholder :
-      currentStep.placeholder || placeholder;
+    const inputPlaceholder = speaking
+      ? recognitionPlaceholder
+      : currentStep.placeholder || placeholder;
 
     const inputAttributesOverride = currentStep.inputAttributes || inputAttributes;
 
@@ -582,7 +656,7 @@ class ChatBot extends Component {
             opened={opened}
             onClick={() => this.toggleChatBot(true)}
           >
-            <ChatIcon />
+            {typeof floatingIcon === 'string' ? <FloatingIcon src={floatingIcon} /> : floatingIcon}
           </FloatButton>
         )}
         <ChatBotContainer
@@ -597,20 +671,20 @@ class ChatBot extends Component {
           {!hideHeader && header}
           <Content
             className="rsc-content"
-            innerRef={contentRef => (this.content = contentRef)}
+            ref={this.setContentRef}
             floating={floating}
             style={contentStyle}
             height={height}
             hideInput={currentStep.hideInput}
           >
-            {_.map(renderedSteps, this.renderStep)}
+            {renderedSteps.map(this.renderStep)}
           </Content>
           <Footer className="rsc-footer" style={footerStyle}>
             {!currentStep.hideInput && (
               <Input
                 type="textarea"
                 style={inputStyle}
-                innerRef={inputRef => (this.input = inputRef)}
+                ref={this.setInputRef}
                 className="rsc-input"
                 placeholder={inputInvalid ? '' : inputPlaceholder}
                 onKeyPress={this.handleKeyPress}
@@ -643,43 +717,53 @@ class ChatBot extends Component {
 }
 
 ChatBot.propTypes = {
-  avatarStyle: PropTypes.object,
+  avatarStyle: PropTypes.objectOf(PropTypes.any),
   botAvatar: PropTypes.string,
   botDelay: PropTypes.number,
-  bubbleOptionStyle: PropTypes.object,
-  bubbleStyle: PropTypes.object,
+  bubbleOptionStyle: PropTypes.objectOf(PropTypes.any),
+  bubbleStyle: PropTypes.objectOf(PropTypes.any),
   cache: PropTypes.bool,
   cacheName: PropTypes.string,
   className: PropTypes.string,
-  contentStyle: PropTypes.object,
+  contentStyle: PropTypes.objectOf(PropTypes.any),
   customDelay: PropTypes.number,
-  customStyle: PropTypes.object,
+  customStyle: PropTypes.objectOf(PropTypes.any),
   enableMobileAutoFocus: PropTypes.bool,
+  enableSmoothScroll: PropTypes.bool,
   floating: PropTypes.bool,
-  floatingStyle: PropTypes.object,
-  footerStyle: PropTypes.object,
+  floatingIcon: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
+  floatingStyle: PropTypes.objectOf(PropTypes.any),
+  footerStyle: PropTypes.objectOf(PropTypes.any),
   handleEnd: PropTypes.func,
   headerComponent: PropTypes.element,
   headerTitle: PropTypes.string,
+  height: PropTypes.string,
   hideBotAvatar: PropTypes.bool,
   hideHeader: PropTypes.bool,
   hideSubmitButton: PropTypes.bool,
   hideUserAvatar: PropTypes.bool,
-  inputStyle: PropTypes.object,
+  inputAttributes: PropTypes.objectOf(PropTypes.any),
+  inputStyle: PropTypes.objectOf(PropTypes.any),
   opened: PropTypes.bool,
   toggleFloating: PropTypes.func,
   placeholder: PropTypes.string,
-  inputAttributes: PropTypes.object,
   recognitionEnable: PropTypes.bool,
   recognitionLang: PropTypes.string,
   recognitionPlaceholder: PropTypes.string,
-  steps: PropTypes.array.isRequired,
-  style: PropTypes.object,
-  submitButtonStyle: PropTypes.object,
+  speechSynthesis: PropTypes.shape({
+    enable: PropTypes.bool,
+    lang: PropTypes.string,
+    voice:
+      typeof window !== 'undefined'
+        ? PropTypes.instanceOf(window.SpeechSynthesisVoice)
+        : PropTypes.any
+  }),
+  steps: PropTypes.arrayOf(PropTypes.object).isRequired,
+  style: PropTypes.objectOf(PropTypes.any),
+  submitButtonStyle: PropTypes.objectOf(PropTypes.any),
   userAvatar: PropTypes.string,
   userDelay: PropTypes.number,
-  width: PropTypes.string,
-  height: PropTypes.string,
+  width: PropTypes.string
 };
 
 ChatBot.defaultProps = {
@@ -694,12 +778,15 @@ ChatBot.defaultProps = {
   customStyle: {},
   customDelay: 1000,
   enableMobileAutoFocus: false,
+  enableSmoothScroll: false,
   floating: false,
+  floatingIcon: <ChatIcon />,
   floatingStyle: {},
   footerStyle: {},
   handleEnd: undefined,
   headerComponent: undefined,
   headerTitle: 'Chat',
+  height: '520px',
   hideBotAvatar: false,
   hideHeader: false,
   hideSubmitButton: false,
@@ -711,16 +798,20 @@ ChatBot.defaultProps = {
   recognitionEnable: false,
   recognitionLang: 'en',
   recognitionPlaceholder: 'Listening ...',
+  speechSynthesis: {
+    enable: false,
+    lang: 'en',
+    voice: null
+  },
   style: {},
   submitButtonStyle: {},
   toggleFloating: undefined,
   userDelay: 1000,
   width: '350px',
-  height: '520px',
   botAvatar:
-    'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iaXNvLTg4NTktMSI/Pg0KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDE5LjAuMCwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPg0KPHN2ZyB2ZXJzaW9uPSIxLjEiIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4PSIwcHgiIHk9IjBweCINCgkgdmlld0JveD0iMCAwIDUxMiA1MTIiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDUxMiA1MTI7IiB4bWw6c3BhY2U9InByZXNlcnZlIj4NCjxwYXRoIHN0eWxlPSJmaWxsOiM5M0M3RUY7IiBkPSJNMzAyLjU0NSw2OS44MThjMC0yNS43MDctMjAuODQtNDYuNTQ1LTQ2LjU0NS00Ni41NDVzLTQ2LjU0NSwyMC44MzgtNDYuNTQ1LDQ2LjU0NQ0KCWMwLDE3LjIyNSw5LjM2NSwzMi4yNTQsMjMuMjczLDQwLjMwNHY4My44MThoNDYuNTQ1di04My44MThDMjkzLjE4MSwxMDIuMDczLDMwMi41NDUsODcuMDQzLDMwMi41NDUsNjkuODE4eiIvPg0KPHBhdGggc3R5bGU9ImZpbGw6IzVBOEJCMDsiIGQ9Ik0yNTYsMjMuMjczdjE3MC42NjdoMjMuMjczdi04My44MThjMTMuOTA4LTguMDQ5LDIzLjI3My0yMy4wNzcsMjMuMjczLTQwLjMwNA0KCUMzMDIuNTQ1LDQ0LjExMSwyODEuNzA1LDIzLjI3MywyNTYsMjMuMjczeiIvPg0KPHJlY3QgeT0iMjQwLjQ4NSIgc3R5bGU9ImZpbGw6IzkzQzdFRjsiIHdpZHRoPSIyNDguMjQyIiBoZWlnaHQ9IjEyNC4xMjEiLz4NCjxyZWN0IHg9IjI2My43NTgiIHk9IjI0MC40ODUiIHN0eWxlPSJmaWxsOiM1QThCQjA7IiB3aWR0aD0iMjQ4LjI0MiIgaGVpZ2h0PSIxMjQuMTIxIi8+DQo8cmVjdCB4PSIxODYuMTgyIiB5PSIzNjQuNjA2IiBzdHlsZT0iZmlsbDojOTNDN0VGOyIgd2lkdGg9IjEzOS42MzYiIGhlaWdodD0iMTI0LjEyMSIvPg0KPHJlY3QgeD0iMjU2IiB5PSIzNjQuNjA2IiBzdHlsZT0iZmlsbDojNUE4QkIwOyIgd2lkdGg9IjY5LjgxOCIgaGVpZ2h0PSIxMjQuMTIxIi8+DQo8cmVjdCB4PSI0Ni41NDUiIHk9IjE2Mi45MDkiIHN0eWxlPSJmaWxsOiNDQ0U5Rjk7IiB3aWR0aD0iNDE4LjkwOSIgaGVpZ2h0PSIyNzkuMjczIi8+DQo8cmVjdCB4PSIyNTYiIHk9IjE2Mi45MDkiIHN0eWxlPSJmaWxsOiM5M0M3RUY7IiB3aWR0aD0iMjA5LjQ1NSIgaGVpZ2h0PSIyNzkuMjczIi8+DQo8cGF0aCBzdHlsZT0iZmlsbDojM0M1RDc2OyIgZD0iTTE5My45MzksMjcxLjUxNWMwLDE3LjEzOC0xMy44OTQsMzEuMDMtMzEuMDMsMzEuMDNsMCwwYy0xNy4xMzYsMC0zMS4wMy0xMy44OTItMzEuMDMtMzEuMDNsMCwwDQoJYzAtMTcuMTM4LDEzLjg5NC0zMS4wMywzMS4wMy0zMS4wM2wwLDBDMTgwLjA0NiwyNDAuNDg1LDE5My45MzksMjU0LjM3NywxOTMuOTM5LDI3MS41MTVMMTkzLjkzOSwyNzEuNTE1eiIvPg0KPHBhdGggc3R5bGU9ImZpbGw6IzFFMkUzQjsiIGQ9Ik0zODAuMTIxLDI3MS41MTVjMCwxNy4xMzgtMTMuODk0LDMxLjAzLTMxLjAzLDMxLjAzbDAsMGMtMTcuMTM3LDAtMzEuMDMtMTMuODkyLTMxLjAzLTMxLjAzbDAsMA0KCWMwLTE3LjEzOCwxMy44OTQtMzEuMDMsMzEuMDMtMzEuMDNsMCwwQzM2Ni4yMjcsMjQwLjQ4NSwzODAuMTIxLDI1NC4zNzcsMzgwLjEyMSwyNzEuNTE1TDM4MC4xMjEsMjcxLjUxNXoiLz4NCjxwYXRoIHN0eWxlPSJmaWxsOiMzQzVENzY7IiBkPSJNMTg2LjE4MiwzNDkuMDkxYzAsMzguNTU4LDMxLjI1OCw2OS44MTgsNjkuODE4LDY5LjgxOGwwLDBjMzguNTU4LDAsNjkuODE4LTMxLjI2LDY5LjgxOC02OS44MTgNCglIMTg2LjE4MnoiLz4NCjxwYXRoIHN0eWxlPSJmaWxsOiMxRTJFM0I7IiBkPSJNMjU2LDM0OS4wOTFjMCwzOC41NTgsMCw0Ni41NDUsMCw2OS44MThsMCwwYzM4LjU1OCwwLDY5LjgxOC0zMS4yNiw2OS44MTgtNjkuODE4SDI1NnoiLz4NCjxnPg0KPC9nPg0KPGc+DQo8L2c+DQo8Zz4NCjwvZz4NCjxnPg0KPC9nPg0KPGc+DQo8L2c+DQo8Zz4NCjwvZz4NCjxnPg0KPC9nPg0KPGc+DQo8L2c+DQo8Zz4NCjwvZz4NCjxnPg0KPC9nPg0KPGc+DQo8L2c+DQo8Zz4NCjwvZz4NCjxnPg0KPC9nPg0KPGc+DQo8L2c+DQo8Zz4NCjwvZz4NCjwvc3ZnPg0K',
+    "data:image/svg+xml,%3csvg version='1' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3e%3cpath d='M303 70a47 47 0 1 0-70 40v84h46v-84c14-8 24-23 24-40z' fill='%2393c7ef'/%3e%3cpath d='M256 23v171h23v-84a47 47 0 0 0-23-87z' fill='%235a8bb0'/%3e%3cpath fill='%2393c7ef' d='M0 240h248v124H0z'/%3e%3cpath fill='%235a8bb0' d='M264 240h248v124H264z'/%3e%3cpath fill='%2393c7ef' d='M186 365h140v124H186z'/%3e%3cpath fill='%235a8bb0' d='M256 365h70v124h-70z'/%3e%3cpath fill='%23cce9f9' d='M47 163h419v279H47z'/%3e%3cpath fill='%2393c7ef' d='M256 163h209v279H256z'/%3e%3cpath d='M194 272a31 31 0 0 1-62 0c0-18 14-32 31-32s31 14 31 32z' fill='%233c5d76'/%3e%3cpath d='M380 272a31 31 0 0 1-62 0c0-18 14-32 31-32s31 14 31 32z' fill='%231e2e3b'/%3e%3cpath d='M186 349a70 70 0 1 0 140 0H186z' fill='%233c5d76'/%3e%3cpath d='M256 349v70c39 0 70-31 70-70h-70z' fill='%231e2e3b'/%3e%3c/svg%3e",
   userAvatar:
-    'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiA/PjwhRE9DVFlQRSBzdmcgIFBVQkxJQyAnLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4nICAnaHR0cDovL3d3dy53My5vcmcvR3JhcGhpY3MvU1ZHLzEuMS9EVEQvc3ZnMTEuZHRkJz48c3ZnIGVuYWJsZS1iYWNrZ3JvdW5kPSJuZXcgLTIwOC41IDIxIDEwMCAxMDAiIGlkPSJMYXllcl8xIiB2ZXJzaW9uPSIxLjEiIHZpZXdCb3g9Ii0yMDguNSAyMSAxMDAgMTAwIiB4bWw6c3BhY2U9InByZXNlcnZlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnNrZXRjaD0iaHR0cDovL3d3dy5ib2hlbWlhbmNvZGluZy5jb20vc2tldGNoL25zIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+PGc+PGNpcmNsZSBjeD0iLTE1OC41IiBjeT0iNzEiIGZpbGw9IiNGNUVFRTUiIGlkPSJNYXNrIiByPSI1MCIvPjxnPjxkZWZzPjxjaXJjbGUgY3g9Ii0xNTguNSIgY3k9IjcxIiBpZD0iTWFza18yXyIgcj0iNTAiLz48L2RlZnM+PGNsaXBQYXRoIGlkPSJNYXNrXzRfIj48dXNlIG92ZXJmbG93PSJ2aXNpYmxlIiB4bGluazpocmVmPSIjTWFza18yXyIvPjwvY2xpcFBhdGg+PHBhdGggY2xpcC1wYXRoPSJ1cmwoI01hc2tfNF8pIiBkPSJNLTEwOC41LDEyMXYtMTRjMCwwLTIxLjItNC45LTI4LTYuN2MtMi41LTAuNy03LTMuMy03LTEyICAgICBjMC0xLjcsMC02LjMsMC02LjNoLTE1aC0xNWMwLDAsMCw0LjYsMCw2LjNjMCw4LjctNC41LDExLjMtNywxMmMtNi44LDEuOS0yOC4xLDcuMy0yOC4xLDYuN3YxNGg1MC4xSC0xMDguNXoiIGZpbGw9IiNFNkMxOUMiIGlkPSJNYXNrXzNfIi8+PGcgY2xpcC1wYXRoPSJ1cmwoI01hc2tfNF8pIj48ZGVmcz48cGF0aCBkPSJNLTEwOC41LDEyMXYtMTRjMCwwLTIxLjItNC45LTI4LTYuN2MtMi41LTAuNy03LTMuMy03LTEyYzAtMS43LDAtNi4zLDAtNi4zaC0xNWgtMTVjMCwwLDAsNC42LDAsNi4zICAgICAgIGMwLDguNy00LjUsMTEuMy03LDEyYy02LjgsMS45LTI4LjEsNy4zLTI4LjEsNi43djE0aDUwLjFILTEwOC41eiIgaWQ9Ik1hc2tfMV8iLz48L2RlZnM+PGNsaXBQYXRoIGlkPSJNYXNrXzVfIj48dXNlIG92ZXJmbG93PSJ2aXNpYmxlIiB4bGluazpocmVmPSIjTWFza18xXyIvPjwvY2xpcFBhdGg+PHBhdGggY2xpcC1wYXRoPSJ1cmwoI01hc2tfNV8pIiBkPSJNLTE1OC41LDEwMC4xYzEyLjcsMCwyMy0xOC42LDIzLTM0LjQgICAgICBjMC0xNi4yLTEwLjMtMjQuNy0yMy0yNC43cy0yMyw4LjUtMjMsMjQuN0MtMTgxLjUsODEuNS0xNzEuMiwxMDAuMS0xNTguNSwxMDAuMXoiIGZpbGw9IiNENEIwOEMiIGlkPSJoZWFkLXNoYWRvdyIvPjwvZz48L2c+PHBhdGggZD0iTS0xNTguNSw5NmMxMi43LDAsMjMtMTYuMywyMy0zMWMwLTE1LjEtMTAuMy0yMy0yMy0yM3MtMjMsNy45LTIzLDIzICAgIEMtMTgxLjUsNzkuNy0xNzEuMiw5Ni0xNTguNSw5NnoiIGZpbGw9IiNGMkNFQTUiIGlkPSJoZWFkIi8+PC9nPjwvc3ZnPg==',
+    "data:image/svg+xml,%3csvg viewBox='-208.5 21 100 100' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'%3e%3ccircle cx='-158.5' cy='71' fill='%23F5EEE5' r='50'/%3e%3cdefs%3e%3ccircle cx='-158.5' cy='71' id='a' r='50'/%3e%3c/defs%3e%3cclipPath id='b'%3e%3cuse overflow='visible' xlink:href='%23a'/%3e%3c/clipPath%3e%3cpath clip-path='url(%23b)' d='M-108.5 121v-14s-21.2-4.9-28-6.7c-2.5-.7-7-3.3-7-12V82h-30v6.3c0 8.7-4.5 11.3-7 12-6.8 1.9-28.1 7.3-28.1 6.7v14h100.1z' fill='%23E6C19C'/%3e%3cg clip-path='url(%23b)'%3e%3cdefs%3e%3cpath d='M-108.5 121v-14s-21.2-4.9-28-6.7c-2.5-.7-7-3.3-7-12V82h-30v6.3c0 8.7-4.5 11.3-7 12-6.8 1.9-28.1 7.3-28.1 6.7v14h100.1z' id='c'/%3e%3c/defs%3e%3cclipPath id='d'%3e%3cuse overflow='visible' xlink:href='%23c'/%3e%3c/clipPath%3e%3cpath clip-path='url(%23d)' d='M-158.5 100.1c12.7 0 23-18.6 23-34.4 0-16.2-10.3-24.7-23-24.7s-23 8.5-23 24.7c0 15.8 10.3 34.4 23 34.4z' fill='%23D4B08C'/%3e%3c/g%3e%3cpath d='M-158.5 96c12.7 0 23-16.3 23-31 0-15.1-10.3-23-23-23s-23 7.9-23 23c0 14.7 10.3 31 23 31z' fill='%23F2CEA5'/%3e%3c/svg%3e"
 };
 
 export default ChatBot;

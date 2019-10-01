@@ -1,37 +1,53 @@
 const path = require('path');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
-const LodashModuleReplacementPlugin = require('lodash-webpack-plugin');
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const TerserPlugin = require('terser-webpack-plugin');
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 
 module.exports = {
+  mode: 'production',
+  devtool: 'source-map',
   entry: path.resolve(__dirname, 'lib/index'),
-  externals: { 'styled-components': 'styled-components' },
+  externals: {
+    'styled-components': 'styled-components',
+    react: 'react'
+  },
+  optimization: {
+    minimizer: [
+      new TerserPlugin({
+        parallel: true,
+        sourceMap: true,
+        terserOptions: {
+          output: {
+            comments: false,
+          }
+        },
+      }),
+    ]
+  },
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'bekb-chatbot.js',
     publicPath: 'dist/',
     library: 'BekbReactSimpleChatbot',
     libraryTarget: 'umd',
+    globalObject: "typeof self !== 'undefined' ? self : this"
   },
   resolve: {
-    extensions: ['.js', '.jsx'],
+    extensions: ['.js', '.jsx']
   },
   plugins: [
     new CleanWebpackPlugin(['dist']),
-    new LodashModuleReplacementPlugin(),
-    new UglifyJsPlugin({
-      comments: false,
-    }),
-    new BundleAnalyzerPlugin(),
+    process.env.BUNDLE_ANALYZE === 'true' ? new BundleAnalyzerPlugin() : () => { }
   ],
   module: {
     rules: [
       {
         test: /\.jsx?$/,
         exclude: /(node_modules|bower_components)/,
-        use: ['babel-loader'],
-      },
-    ],
-  },
+        use: {
+          loader: 'babel-loader'
+        }
+      }
+    ]
+  }
 };

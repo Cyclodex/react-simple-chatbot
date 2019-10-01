@@ -1,19 +1,20 @@
 const path = require('path');
 
 module.exports = {
+  mode: 'development',
   entry: path.resolve(__dirname, 'example/main.jsx'),
   output: {
     path: path.resolve(__dirname, 'example'),
     publicPath: '/',
-    filename: 'bundle.js',
+    filename: 'bundle.js'
   },
   devServer: {
     contentBase: path.join(__dirname, 'example'),
     // host: '0.0.0.0',
-    disableHostCheck: true,
+    disableHostCheck: true
   },
   resolve: {
-    extensions: ['.js', '.jsx'],
+    extensions: ['.js', '.jsx']
   },
   plugins: [],
   devtool: 'source-map',
@@ -22,8 +23,10 @@ module.exports = {
       {
         test: /\.jsx?$/,
         exclude: /(node_modules|bower_components)/,
-        use: ['babel-loader'],
-      },
-    ],
-  },
+        use: {
+          loader: 'babel-loader'
+        }
+      }
+    ]
+  }
 };

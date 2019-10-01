@@ -8,53 +8,47 @@ import TextStepContainer from './TextStepContainer';
 
 class TextStep extends Component {
   /* istanbul ignore next */
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      loading: true,
-    };
-
-    this.renderMessage = this.renderMessage.bind(this);
-  }
+  state = {
+    loading: true
+  };
 
   componentDidMount() {
-    const { step } = this.props;
+    const { step, speak, previousValue, triggerNextStep } = this.props;
     const { component, delay, waitAction } = step;
     const isComponentWatingUser = component && waitAction;
+
     setTimeout(() => {
       this.setState({ loading: false }, () => {
         if (!isComponentWatingUser && !step.rendered) {
-          this.props.triggerNextStep();
+          triggerNextStep();
         }
+        speak(step, previousValue);
       });
     }, delay);
   }
 
-  renderMessage() {
-    const {
-      previousValue,
-      step,
-      steps,
-      previousStep,
-      triggerNextStep,
-    } = this.props;
+  getMessage = () => {
+    const { previousValue, step } = this.props;
+    const { message } = step;
+
+    return message ? message.replace(/{previousValue}/g, previousValue) : '';
+  };
+
+  renderMessage = () => {
+    const { step, steps, previousStep, triggerNextStep } = this.props;
     const { component } = step;
-    let { message } = step;
 
     if (component) {
       return React.cloneElement(component, {
         step,
         steps,
         previousStep,
-        triggerNextStep,
+        triggerNextStep
       });
     }
 
-    message = message.replace(/{previousValue}/g, previousValue);
-
-    return message;
-  }
+    return this.getMessage();
+  };
 
   render() {
     const {
@@ -64,26 +58,17 @@ class TextStep extends Component {
       avatarStyle,
       bubbleStyle,
       hideBotAvatar,
-      hideUserAvatar,
+      hideUserAvatar
     } = this.props;
-    const {
-      avatar,
-      user,
-    } = step;
+    const { loading } = this.state;
+    const { avatar, user } = step;
 
     const showAvatar = user ? !hideUserAvatar : !hideBotAvatar;
 
     return (
-      <TextStepContainer
-        className="rsc-ts"
-        user={user}
-      >
-        <ImageContainer
-          className="rsc-ts-image-container"
-          user={user}
-        >
-          {
-            isFirst && showAvatar &&
+      <TextStepContainer className={`rsc-ts ${user ? 'rsc-ts-user' : 'rsc-ts-bot'}`} user={user}>
+        <ImageContainer className="rsc-ts-image-container" user={user}>
+          {isFirst && showAvatar && (
             <Image
               className="rsc-ts-image"
               style={avatarStyle}
@@ -92,7 +77,7 @@ class TextStep extends Component {
               src={avatar}
               alt="avatar"
             />
-          }
+          )}
         </ImageContainer>
         <Bubble
           className="rsc-ts-bubble"
@@ -102,11 +87,7 @@ class TextStep extends Component {
           isFirst={isFirst}
           isLast={isLast}
         >
-          {
-            this.state.loading &&
-            <Loading />
-          }
-          { !this.state.loading && this.renderMessage() }
+          {loading ? <Loading /> : this.renderMessage()}
         </Bubble>
       </TextStepContainer>
     );
@@ -114,23 +95,31 @@ class TextStep extends Component {
 }
 
 TextStep.propTypes = {
+  avatarStyle: PropTypes.objectOf(PropTypes.any).isRequired,
   isFirst: PropTypes.bool.isRequired,
   isLast: PropTypes.bool.isRequired,
-  step: PropTypes.object.isRequired,
-  triggerNextStep: PropTypes.func.isRequired,
-  avatarStyle: PropTypes.object.isRequired,
-  bubbleStyle: PropTypes.object.isRequired,
+  bubbleStyle: PropTypes.objectOf(PropTypes.any).isRequired,
   hideBotAvatar: PropTypes.bool.isRequired,
   hideUserAvatar: PropTypes.bool.isRequired,
-  previousStep: PropTypes.object,
-  previousValue: PropTypes.any,
-  steps: PropTypes.object,
+  previousStep: PropTypes.objectOf(PropTypes.any),
+  previousValue: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.bool,
+    PropTypes.number,
+    PropTypes.object,
+    PropTypes.array
+  ]),
+  speak: PropTypes.func,
+  step: PropTypes.objectOf(PropTypes.any).isRequired,
+  steps: PropTypes.objectOf(PropTypes.any),
+  triggerNextStep: PropTypes.func.isRequired
 };
 
 TextStep.defaultProps = {
   previousStep: {},
-  steps: {},
   previousValue: '',
+  speak: () => {},
+  steps: {}
 };
 
 export default TextStep;

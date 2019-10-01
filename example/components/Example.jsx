@@ -13,7 +13,7 @@ const otherFontTheme = {
   botBubbleColor: '#6E48AA',
   botFontColor: '#fff',
   userBubbleColor: '#fff',
-  userFontColor: '#4a4a4a',
+  userFontColor: '#4a4a4a'
 };
 
 const steps = [
@@ -102,8 +102,6 @@ const steps = [
   {
     id: 'End',
     message: 'Finish',
-    end: true,
-  },
 ];
 
 // Initially it needs any working autoComplete value here,
@@ -138,16 +136,17 @@ function showExistingOptions(currentStep, renderedSteps) {
 
   return options;
 }
-
 const ThemedExample = () => (
   <ThemeProvider theme={otherFontTheme}>
-    <ChatBot
-      steps={steps}
-      cache={false}
-      enableMobileAutoFocus={true}
-      userDelay={0}
-      inputAttributes={inputAttributes}
-    />
+    <React.StrictMode>
+      <ChatBot
+        steps={steps}
+        cache={false}
+        enableMobileAutoFocus={true}
+        userDelay={0}
+        inputAttributes={inputAttributes}
+      />
+    </React.StrictMode>
   </ThemeProvider>
 );
 

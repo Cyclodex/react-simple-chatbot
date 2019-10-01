@@ -1,20 +1,16 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import _ from 'lodash';
 import Option from './Option';
 import OptionElement from './OptionElement';
 import Options from './Options';
 import OptionsStepContainer from './OptionsStepContainer';
 
 class OptionsStep extends Component {
-  /* istanbul ignore next */
-  constructor(props) {
-    super(props);
+  onOptionClick = ({ value }) => {
+    const { triggerNextStep } = this.props;
 
-    this.renderOption = this.renderOption.bind(this);
-    this.onOptionClick = this.onOptionClick.bind(this);
-  }
-
+    triggerNextStep({ value });
+  };
   componentWillMount() {
     const { step, renderedSteps } = this.props;
 
@@ -26,20 +22,14 @@ class OptionsStep extends Component {
     }
   }
 
-  onOptionClick({ value }) {
-    this.props.triggerNextStep({ value });
-  }
 
-  renderOption(option) {
-    const { bubbleOptionStyle } = this.props;
-    const { user } = this.props.step;
+  renderOption = option => {
+    const { bubbleOptionStyle, step } = this.props;
+    const { user } = step;
     const { value, label } = option;
 
     return (
-      <Option
-        key={value}
-        className="rsc-os-option"
-      >
+      <Option key={value} className="rsc-os-option">
         <OptionElement
           className="rsc-os-option-element"
           style={bubbleOptionStyle}
@@ -50,15 +40,16 @@ class OptionsStep extends Component {
         </OptionElement>
       </Option>
     );
-  }
+  };
 
   render() {
+    const { step } = this.props;
     const { options } = this.state;
 
     return (
       <OptionsStepContainer className="rsc-os">
         <Options className="rsc-os-options">
-          {_.map(options, this.renderOption)}
+          {Object.keys(options).map(key => options[key]).map(this.renderOption)}
         </Options>
       </OptionsStepContainer>
     );
@@ -66,10 +57,10 @@ class OptionsStep extends Component {
 }
 
 OptionsStep.propTypes = {
-  step: PropTypes.object.isRequired,
+  bubbleOptionStyle: PropTypes.objectOf(PropTypes.any).isRequired,
   renderedSteps: PropTypes.array,
-  triggerNextStep: PropTypes.func.isRequired,
-  bubbleOptionStyle: PropTypes.object.isRequired,
+  step: PropTypes.objectOf(PropTypes.any).isRequired,
+  triggerNextStep: PropTypes.func.isRequired
 };
 
 OptionsStep.defaultProps = {
