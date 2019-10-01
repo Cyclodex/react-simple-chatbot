@@ -30,8 +30,8 @@ class CustomStep extends Component {
       step,
       steps,
       previousStep,
-      triggerNextStep
-      renderedSteps,
+      triggerNextStep,
+      renderedSteps
     });
   };
 
