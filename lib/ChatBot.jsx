@@ -207,9 +207,9 @@ class ChatBot extends Component {
     return typeof trigger === 'function' ? trigger({ value, steps }) : trigger;
   };
 
-  getOptions(step, steps) {
+  getOptions = (step, steps) => {
     return typeof step.options === 'function' ? step.options(step, steps) : step.options;
-  }
+  };
 
   getStepMessage = message => {
     const { previousSteps } = this.state;
