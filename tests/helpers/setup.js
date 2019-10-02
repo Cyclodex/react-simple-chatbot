@@ -4,12 +4,13 @@ import Adapter from 'enzyme-adapter-react-16';
 
 configure({ adapter: new Adapter() });
 
-const jsdom = require('jsdom').jsdom;
-
 const exposedProperties = ['window', 'navigator', 'document'];
 const storage = {};
 
-global.document = jsdom('');
+const jsdom = require('jsdom');
+const { JSDOM } = jsdom;
+const { document } = (new JSDOM('', { url: "http://localhost" })).window;
+global.document = document;
 global.window = document.defaultView;
 global.localStorage = {
   getItem(key) {
