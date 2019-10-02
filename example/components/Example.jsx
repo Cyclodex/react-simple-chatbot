@@ -102,6 +102,7 @@ const steps = [
   {
     id: 'End',
     message: 'Finish',
+  }
 ];
 
 // Initially it needs any working autoComplete value here,
