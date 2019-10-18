@@ -60,12 +60,13 @@ CustomStep.propTypes = {
   step: PropTypes.objectOf(PropTypes.any).isRequired,
   steps: PropTypes.objectOf(PropTypes.any).isRequired,
   style: PropTypes.objectOf(PropTypes.any).isRequired,
-  triggerNextStep: PropTypes.func.isRequired
+  triggerNextStep: PropTypes.func.isRequired,
+  renderedSteps: PropTypes.arrayOf(PropTypes.any)
 };
 CustomStep.defaultProps = {
   previousValue: '',
   speak: () => {},
-  renderedSteps: [],
+  renderedSteps: []
 };
 
 export default CustomStep;
